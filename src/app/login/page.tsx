@@ -1,92 +1,31 @@
 'use client';
 
+import { useUser } from '@auth0/nextjs-auth0';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
-// Custom hook to fetch user data from our API
-function useAuth() {
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchUser = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/auth/me', {
-        cache: 'no-store' // Prevent caching to get fresh data
-      });
-      const data = await response.json();
-      setUser(data.user);
-      setError(data.error);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  return { user, isLoading, error, refetch: fetchUser };
-}
-
-export default function Home() {
-  const { user, isLoading, error } = useAuth();
+export default function LoginPage() {
+  const { user, isLoading } = useUser();
   const router = useRouter();
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== HOME PAGE DEBUG ===');
-    console.log('User:', user);
-    console.log('IsLoading:', isLoading);
-    console.log('Error:', error);
-    console.log('LoadingTimeout:', loadingTimeout);
-    console.log('=======================');
-  }, [user, isLoading, error, loadingTimeout]);
-
-  // If user is authenticated, redirect to dashboard
   useEffect(() => {
     if (user && !isLoading) {
-      console.log('Redirecting to dashboard - user is authenticated');
-      router.push('/dashboard');
+      router.push('/');
     }
   }, [user, isLoading, router]);
 
-  // Timeout mechanism for stuck loading state
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => {
-        console.log('Loading timeout reached, showing login page');
-        setLoadingTimeout(true);
-      }, 3000); // 3 second timeout
-
-      return () => clearTimeout(timer);
-    } else {
-      setLoadingTimeout(false);
-    }
-  }, [isLoading]);
-
-  // Show loading while checking authentication (with timeout)
-  if (isLoading && !loadingTimeout) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading authentication...</p>
-        </div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-black"></div>
       </div>
     );
   }
 
-  // If authenticated, don't show login page (will redirect via useEffect)
   if (user) {
-    return null;
+    return null; // Will redirect via useEffect
   }
 
-  // Show login page for unauthenticated users
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -169,4 +108,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
+} 
